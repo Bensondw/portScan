@@ -32,41 +32,45 @@ try:
             print: "[!] Exiting"
             sys.exit(1)
 
-
-ports = range(int(min_port), int(max_port)+1) #put the ports into an array
-start_clock = datetime.now()
+#put the ports into an array
+ports = range(int(min_port), int(max_port)+1)
+# 0x12 comes back in the packet info.
 SYNACK = 0x12
+# 0x14 is sent to the target port to indicate an RST termination of connection
 RSTACK = 0x14
 
 # ensure that target IP is up and responsive before starting to scan
 def checkhost(ip_addr):
-    conf.verb = 0
     try:
         ping = srl(IP(dst = ip)/ICMP())
-        print "/n[*] Target Host is up, beginning scan..."
+        print "/n[*] Target Host is up, starting scan..."
     except Exception:
-        print "/n[!] Couldn't resolve target"
+        print "/n[!] Cannot determine if Host is up"
 
 # perform the scan on each port
-def scanport(port):
+def portscan(port):
     srcport = RandShort()
-    conf.verb = 0
+    # send the packet to the port
     SYNACKpkt = srl(IP(dst = target)/TCP(sport = srcport, dport = port, flags = "S"))
+    # determine if the returned packet is a SYNACK which demonstrates an open port
     pktflags = SYNACKpkt.getlayer(TCP).flags
-    if pktflags == SYNACK:
+    # evaluate the pktflags returned from the target port
+    if pktflags == SYNACK: #if the SYNACK was successful, the port is open
         return True
     else:
-        return False
+        return False #otherwise it is not open (maybe filtered or closed)
+    # send back an RST packet which will terminate the connection before it finishes
+    # this makes it less likely the host machine will recognize a ocnnection was attempted
     RSTpkt = IP(dst = target)/TCP(sport = srcport, dport = port, flags = "R")
-    send(RSTpkt)
+    send(RSTpkt) #this allows "stealth" scanning - its at least a little less noisy
 
 # go through each target IP provided by the user
 for var in target:
-    checkhost(var)
+    checkhost(var) #check each target IP for all the ports
     print "[*] Scanning Started at " + strftime("%H:%M:%S") + "!\n"
 
     # scan all the ports
     for port in ports:
-        status = scanport(port)
+        status = portscan(port)
         if status == True:
             print "Port " + str(port) + ": Open"
