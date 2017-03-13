@@ -42,7 +42,7 @@ RSTACK = 0x14
 # ensure that target IP is up and responsive before starting to scan
 def checkhost(ip_addr):
     try:
-        ping = srl(IP(dst = ip)/ICMP())
+        ping = srl(IP(dst = ip_addr)/ICMP())
         print "/n[*] Target Host is up, starting scan..."
     except Exception:
         print "/n[!] Cannot determine if Host is up"
