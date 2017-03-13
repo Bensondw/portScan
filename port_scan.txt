@@ -4,8 +4,7 @@ import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
 import sys
-from datetime import datetime
-from time import strftime
+
 
 target = []
 
@@ -43,8 +42,10 @@ RSTACK = 0x14
 def checkhost(ip_addr):
     try:
         ping = srl(IP(dst = ip_addr)/ICMP())
+        return True
         print "/n[*] Target Host is up, starting scan..."
     except Exception:
+        return False
         print "/n[!] Cannot determine if Host is up"
 
 # perform the scan on each port
@@ -66,11 +67,11 @@ def portscan(port):
 
 # go through each target IP provided by the user
 for var in target:
-    checkhost(var) #check each target IP for all the ports
-    print "[*] Scanning Started at " + strftime("%H:%M:%S") + "!\n"
-
-    # scan all the ports
-    for port in ports:
-        status = portscan(port)
-        if status == True:
-            print "Port " + str(port) + ": Open"
+    host_test = checkhost(var) #check each target IP for all the ports
+    if host_test == True:
+        print "[*] Scanning Started !\n"
+        # scan all the ports
+        for port in ports:
+            status = portscan(port)
+            if status == True:
+                print "Port " + str(port) + ": Open"
